@@ -16,6 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -50,6 +51,8 @@ public class LoginController {
         UserEntity userEntity1=userService.findByMobile(userEntity.getMobilephone());
         if (null!=userEntity1){
             throw new Exception("手机号码已存在！");
+        }else {
+            redisTemplate.delete("myuser::"+userEntity.getMobilephone());
         }
         UserEntity userEntity2=userService.findByEmail(userEntity.getEmail());
         if (null!=userEntity2){
@@ -120,15 +123,28 @@ public class LoginController {
 
     @RequestMapping(value = "/delete",method = RequestMethod.GET)
     public ModelAndView deleteUser(String mobile,HttpServletRequest request){
+        UserEntity userEntity = userService.findByMobile(mobile);
         int a=userService.deleteUser(mobile);
         String result = null;
         if (a>0){
+            redisTemplate.delete("myuser::"+userEntity.getMobilephone()+userEntity.getPwd());
             result="login";
             request.getSession().removeAttribute("user");
         }else {
             result="index";
         }
         ModelAndView modelAndView = new ModelAndView(result);
+        return modelAndView;
+    }
+
+    @RequestMapping(value = "/test",method = RequestMethod.GET)
+    public ModelAndView test(HttpServletRequest request){
+
+        HttpSession session = request.getSession();
+
+        logger.info("*****session***"+session.getAttribute("user"));
+
+        ModelAndView modelAndView = new ModelAndView("test");
         return modelAndView;
     }
 }
